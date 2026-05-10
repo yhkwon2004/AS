@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ascii-video-terminal
+    runtime: docker
+    plan: free
+    autoDeploy: true
