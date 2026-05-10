@@ -11,35 +11,26 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-브라우저에서 `http://127.0.0.1:8000` 접속.
+## Vercel 배포
 
-## 기능
+이 프로젝트는 Vercel Python 서버리스에 맞춰 `vercel.json` + `api/index.py`를 포함합니다.
 
-- 한국어 중심 UI (업로드/재생/중지/상태 안내)
-- 업로드 영상 프레임을 ASCII로 변환
-- 웹페이지 내 터미널(`xterm.js`)에 애니메이션 출력
-- 재생 중단 기능
-- 헬스체크 엔드포인트 `/health`
+```bash
+npm i -g vercel
+vercel
+```
 
-## 웹 배포 (Render)
+### Vercel에서 500(FUNCTION_INVOCATION_FAILED) 날 때 체크
 
-이 저장소는 `render.yaml`과 `Dockerfile`을 포함해 바로 배포할 수 있습니다.
+- 업로드/임시파일은 `/tmp`만 사용 가능 → 코드에서 `/tmp/ascii_uploads` 사용하도록 수정됨.
+- Vercel 함수 실행 시간 제한이 짧아서 긴 영상은 실패할 수 있음.
+- 이 프로젝트는 WebSocket 대신 SSE(`/stream/{file_id}`)를 사용해 서버리스 환경 충돌을 줄였습니다.
 
-1. GitHub에 이 레포지토리 푸시
-2. [Render](https://render.com)에서 **New +** → **Blueprint** 선택
-3. 해당 GitHub repo 연결 후 생성
-4. 배포 완료 후 발급된 URL로 접속
+## Render/Docker 배포 (권장)
 
-Render는 Docker 빌드 시 `ffmpeg`를 함께 설치하므로 별도 서버 세팅이 필요 없습니다.
-
-## Docker로 직접 실행
+긴 영상/안정적인 재생은 Render 같은 컨테이너 환경을 권장합니다.
 
 ```bash
 docker build -t ascii-web .
 docker run --rm -p 8000:8000 ascii-web
 ```
-
-## 요구사항
-
-- Python 3.10+
-- 로컬 실행 시 시스템 `ffmpeg` 설치 필요

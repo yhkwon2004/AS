@@ -16,7 +16,7 @@ const stopBtn = document.getElementById('stopBtn');
 const statusEl = document.getElementById('status');
 
 let fileId = null;
-let ws = null;
+let eventSource = null;
 
 function setStatus(text) { statusEl.textContent = `상태: ${text}`; }
 
@@ -43,15 +43,26 @@ playBtn.onclick = () => {
   term.clear();
   setStatus('재생 중...');
 
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/play/${fileId}`);
-  ws.onmessage = (e) => {
-    term.write(e.data);
-  };
-  ws.onclose = () => setStatus('재생 종료');
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource(`/stream/${fileId}`);
+
+  eventSource.addEventListener('frame', (e) => {
+    term.write('\x1b[2J\x1b[H' + e.data.replaceAll('\\n', '\n'));
+  });
+  eventSource.addEventListener('status', (e) => setStatus(e.data));
+  eventSource.addEventListener('done', (e) => {
+    setStatus(e.data);
+    eventSource.close();
+  });
+  eventSource.addEventListener('error', () => {
+    setStatus('재생 오류');
+    eventSource.close();
+  });
 };
 
 stopBtn.onclick = async () => {
   if (!fileId) return;
   await fetch(`/stop/${fileId}`, { method: 'POST' });
+  if (eventSource) eventSource.close();
   setStatus('중지 요청 보냄');
 };
